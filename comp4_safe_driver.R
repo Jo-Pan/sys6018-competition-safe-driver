@@ -5,6 +5,8 @@ train<-read.csv("train.csv")
 summary(train)
 test<-read.csv("test.csv")
 
+# need data clean 
+train2<-read.csv("train.csv")
 lmraw<-lm(target~.,data=train)
 
 mypred<-predict(lmraw,newdata = test)
