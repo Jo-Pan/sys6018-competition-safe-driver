@@ -3,10 +3,16 @@
 
 train<-read.csv("train.csv")
 summary(train)
-test<-read.csv("test.csv")
+test<-read.csv("test 2.csv")
 
-# need data clean 
-train2<-read.csv("train.csv")
+cat("Combine train and test files")
+test$target <- NA
+comb <- rbind(train, test)
+
+################  Data Cleaning  ##################
+# Set missing values to NA 
+train[train==-1]<-NA
+
 lmraw<-lm(target~.,data=train)
 
 mypred<-predict(lmraw,newdata = test)
