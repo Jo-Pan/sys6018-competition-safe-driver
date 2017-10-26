@@ -1,6 +1,9 @@
 #competition 4 safe driver
 #https://www.kaggle.com/c/porto-seguro-safe-driver-prediction/data
 #https://github.com/Jo-Pan/sys6018-competition-safe-driver
+
+library(class) #knn
+
 train<-read.csv("train.csv")
 test<-read.csv("test 2.csv")
 train_id<-train$id
@@ -14,6 +17,9 @@ comb[comb==-1]<-NA
 
 #what % in columns are na:
 colMeans(is.na(comb)) #none is significantly large
+
+#convert na back to -1 (knn can not deal with na)
+comb[comb==NA]<--1
 
 #collect names of all categorical variables 
 cat_vars <- names(comb)[grepl('_cat$', names(comb))]
@@ -39,7 +45,7 @@ final_table<-data.frame(test$id, mypred)
 write.table(final_table, file="first.csv", row.names=F, col.names=c("id", "target"), sep=",")
 
 ####################  K-NN  ##################### (Jo)
-
+knn.cv(train[,-1],train[,1],k=1)
 
 ############  Step-wise Regression  ############# (Jo)
 
