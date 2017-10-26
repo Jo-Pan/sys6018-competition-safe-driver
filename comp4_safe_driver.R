@@ -15,8 +15,10 @@ comb[comb==-1]<-NA
 #what % in columns are na:
 colMeans(is.na(comb)) #none is significantly large
 
-# collect names of all categorical variables
+#collect names of all categorical variables 
 cat_vars <- names(comb)[grepl('_cat$', names(comb))]
+
+#convert cat_vars to factor
 comb[cat_vars]<-lapply(comb[cat_vars],factor)
 
 #split train & test sets
