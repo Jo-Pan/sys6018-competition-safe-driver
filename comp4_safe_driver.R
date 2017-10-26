@@ -25,6 +25,10 @@ comb[cat_vars]<-lapply(comb[cat_vars],factor)
 train<-comb[train_id,]
 test<-comb[-train_id,]
 
+#drop id column
+train<-train[,-1]
+test<-test[,-1]
+
 ################  Linear Model  ################## (Teresa)
 ### Basic Model ### (Jo)(can be deleted/commented out)
 mypred<-predict(lmraw,newdata = test)
@@ -35,6 +39,7 @@ final_table<-data.frame(test$id, mypred)
 write.table(final_table, file="first.csv", row.names=F, col.names=c("id", "target"), sep=",")
 
 ####################  K-NN  ##################### (Jo)
+
 
 ############  Step-wise Regression  ############# (Jo)
 
