@@ -6,20 +6,16 @@ library(class) #knn
 
 train<-read.csv("train.csv")
 test<-read.csv("test 2.csv")
-train_id<-train$id
+
 #Combine train and test files
 test$target <- NA
 comb <- rbind(train, test)
 
 ################  Data Cleaning  ################## (Jo)
 #indicate nas:
-comb[comb==-1]<-NA
-
+#comb[comb==-1]<-NA
 #what % in columns are na:
-colMeans(is.na(comb)) #none is significantly large
-
-#convert na back to -1 (knn can not deal with na)
-comb[comb==NA]<--1
+#colSums(is.na(comb)) #none is significantly large
 
 #collect names of all categorical variables 
 cat_vars <- names(comb)[grepl('_cat$', names(comb))]
@@ -28,12 +24,8 @@ cat_vars <- names(comb)[grepl('_cat$', names(comb))]
 comb[cat_vars]<-lapply(comb[cat_vars],factor)
 
 #split train & test sets
-train<-comb[train_id,]
-test<-comb[-train_id,]
-
-#drop id column
-train<-train[,-1]
-test<-test[,-1]
+train<-comb[is.na(comb$target)==FALSE,]
+test<-comb[is.na(comb$target)==TRUE,]
 
 ################  Linear Model  ################## (Teresa)
 ### Basic Model ### (Jo)(can be deleted/commented out)
@@ -45,7 +37,7 @@ final_table<-data.frame(test$id, mypred)
 write.table(final_table, file="first.csv", row.names=F, col.names=c("id", "target"), sep=",")
 
 ####################  K-NN  ##################### (Jo)
-knn.cv(train[,-1],train[,1],k=1)
+knn.cv(train[,-c(1:2)],train[,1],k=1)
 
 ############  Step-wise Regression  ############# (Jo)
 
