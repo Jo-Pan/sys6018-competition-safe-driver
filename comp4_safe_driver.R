@@ -37,7 +37,6 @@ train<-comb[is.na(comb$target)==FALSE,]
 test<-comb[is.na(comb$target)==TRUE,]
 
 all1<-train[train$target==1,]
-balancetrain<-rbind(all1,sample_n(train[train$target==0,],30000))
 ################  Gini Index  ##################
 #' Calculates unnormalized Gini index from ground truth and predicted probabilities.
 #' param ground.truth Ground-truth scalar values (e.g., 0 and 1)
@@ -92,37 +91,64 @@ write.table(final_table, file="first.csv", row.names=F, col.names=c("id", "targe
 ####################  K-NN  ##################### (Jo)
 tpr_table<-NULL   
 for (n in c(1:5)){
-  mytrain<-sample_n(train,10000)
-  mytest<-sample_n(train,10000)
+  #not perfect balance, but close.
+  #since not able to cv the whole dataset, I random sample for each round.
+  balancetrain<-rbind(all1,sample_n(train[train$target==0,],30000))
+  mydata<-sample_n(balancetrain,20000)
+  mytrain<-mydata[1:10000,]
+  mytest<-mydata[1:10000,]
   tpr_lst<-c()
-  print(1)
+  print("new data generated")
     for (j in c(1:5)){
     myknn<-knn(train=mytrain[,-c(1:2)],test=mytest[,-c(1:2)],cl=mytrain[,2],k=j)
-    tpr<-sum(myknn==mytest[,2] & mytest[,2]==1)/sum(mytest[,2]==1) #True positive rate
+    #tpr<-sum(myknn==mytest[,2] & mytest[,2]==1)/sum(mytest[,2]==1) #True positive rate
+    tpr<-sum(myknn==mytest[,2] & mytest[,2]==0)/sum(mytest[,2]==0) #True negative rate
+    #tpr<-normalized.gini.index(mytest[,2],myknn) #gini index doesn't help
     tpr_lst<-c(tpr_lst,tpr)
-    print(2)}
+    print("new k")}
   tpr_table<-rbind(tpr_table,tpr_lst)
 }
 colnames(tpr_table)<-c(1:5)
 tpr_table
 
-#result for k:3,5,10,20,30:  below 5 seem to be better
-# K                3           5 10 20 30
+#result for k:3,5,10,20,30 (with train):  below 5 seem to be better
+#   tpr\ K       *3*           5 10 20 30
 #tpr_lst 0.014164306 0.002832861  0  0  0
 #tpr_lst 0.005763689 0.002881844  0  0  0
 #tpr_lst 0.005277045 0.000000000  0  0  0
 #tpr_lst 0.005649718 0.000000000  0  0  0
 #tpr_lst 0.002747253 0.000000000  0  0  0
 
-#result for k:1-5    1 always outperform others
-#          [,1]       [,2]        [,3]        [,4]        [,5]
+#result for k:1-5 (with train)：   1 always outperform others
+#    tpr\ K *[,1]*       [,2]        [,3]        [,4]        [,5]
 #tpr_lst 0.04986877 0.03937008 0.002624672 0.002624672 0.002624672
 #tpr_lst 0.06268657 0.04776119 0.011940299 0.005970149 0.002985075
 #tpr_lst 0.06631300 0.06366048 0.002652520 0.002652520 0.000000000
 #tpr_lst 0.06628242 0.04899135 0.002881844 0.000000000 0.000000000
 #tpr_lst 0.08421053 0.05263158 0.007894737 0.002631579 0.000000000
 
+#result for k:1-5 (with balancetrain)：  
+# tpr\ K     1         2         3         4         5
+#    tpr_lst 1 0.7019346 0.6548842 0.5932649 0.5502747
+#    tpr_lst 1 0.6968968 0.6560019 0.5807072 0.5388501
+#    tpr_lst 1 0.6989222 0.6452671 0.5871603 0.5485005
+#    tpr_lst 1 0.7092080 0.6519561 0.5813454 0.5438931
+#    tpr_lst 1 0.7139457 0.6446930 0.5935269 0.5530700
+
+#true negative rate result for k:1-5 (with balancetrain)：
+#
+#        1         2         3         4         5
+#tpr_lst 1 0.7960549 0.8373928 0.7879931 0.8137221
+#tpr_lst 1 0.8144858 0.8423300 0.7975743 0.8228562
+#tpr_lst 1 0.8008284 0.8410425 0.7947877 0.8182603
+#tpr_lst 1 0.8122407 0.8561549 0.8084371 0.8354080
+#tpr_lst 1 0.8129374 0.8474142 0.8028674 0.8294931
+
+balancetrain<-sample_n(rbind(all1,sample_n(train[train$target==0,],30000)),10000)
 knnpred<-knn(train=balancetrain[,-c(1:2)],test=test[,-c(1:2)],cl=balancetrain[,2],k=1)
+final_table<-data.frame(test$id, knnpred)
+write.table(final_table, file="knn.csv", row.names=F, col.names=c("id", "target"), sep=",")
+
 ############  Step-wise Regression  ############# (Jo)
 
 ####################  Trees  #################### (Sai)
