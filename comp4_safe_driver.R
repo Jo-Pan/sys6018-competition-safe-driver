@@ -36,6 +36,8 @@ comb[cat_vars]<-lapply(comb[cat_vars],factor)
 train<-comb[is.na(comb$target)==FALSE,]
 test<-comb[is.na(comb$target)==TRUE,]
 
+all1<-train[train$target==1,]
+balancetrain<-rbind(all1,sample_n(train[train$target==0,],30000))
 ################  Gini Index  ##################
 #' Calculates unnormalized Gini index from ground truth and predicted probabilities.
 #' param ground.truth Ground-truth scalar values (e.g., 0 and 1)
@@ -88,21 +90,39 @@ final_table<-data.frame(test$id, mypred)
 write.table(final_table, file="first.csv", row.names=F, col.names=c("id", "target"), sep=",")
 
 ####################  K-NN  ##################### (Jo)
-tpr_table<-NULL 
-colnames(tpr_table)<-c(3,5,10,20,30)
+tpr_table<-NULL   
 for (n in c(1:5)){
   mytrain<-sample_n(train,10000)
   mytest<-sample_n(train,10000)
   tpr_lst<-c()
   print(1)
-    for (j in c(3,5,10,20,30)){
+    for (j in c(1:5)){
     myknn<-knn(train=mytrain[,-c(1:2)],test=mytest[,-c(1:2)],cl=mytrain[,2],k=j)
-    tpr<-colSum(myknn==mytest[,2])
-    tpr_lst<-c(tpr_lst,normalized.tpr.index(mytest[,2],myknn))
+    tpr<-sum(myknn==mytest[,2] & mytest[,2]==1)/sum(mytest[,2]==1) #True positive rate
+    tpr_lst<-c(tpr_lst,tpr)
     print(2)}
   tpr_table<-rbind(tpr_table,tpr_lst)
 }
-colMeans(tpr_table)
+colnames(tpr_table)<-c(1:5)
+tpr_table
+
+#result for k:3,5,10,20,30:  below 5 seem to be better
+# K                3           5 10 20 30
+#tpr_lst 0.014164306 0.002832861  0  0  0
+#tpr_lst 0.005763689 0.002881844  0  0  0
+#tpr_lst 0.005277045 0.000000000  0  0  0
+#tpr_lst 0.005649718 0.000000000  0  0  0
+#tpr_lst 0.002747253 0.000000000  0  0  0
+
+#result for k:1-5    1 always outperform others
+#          [,1]       [,2]        [,3]        [,4]        [,5]
+#tpr_lst 0.04986877 0.03937008 0.002624672 0.002624672 0.002624672
+#tpr_lst 0.06268657 0.04776119 0.011940299 0.005970149 0.002985075
+#tpr_lst 0.06631300 0.06366048 0.002652520 0.002652520 0.000000000
+#tpr_lst 0.06628242 0.04899135 0.002881844 0.000000000 0.000000000
+#tpr_lst 0.08421053 0.05263158 0.007894737 0.002631579 0.000000000
+
+knnpred<-knn(train=balancetrain[,-c(1:2)],test=test[,-c(1:2)],cl=balancetrain[,2],k=1)
 ############  Step-wise Regression  ############# (Jo)
 
 ####################  Trees  #################### (Sai)
