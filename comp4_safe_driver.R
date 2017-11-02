@@ -102,7 +102,7 @@ normalized.gini.index = function(ground.truth, predicted.probabilities) {
 
 
 ################  Linear Model  ################## (Teresa)
-#Balanced data (best model) ----------------------------------------------------
+#Balanced data (best model) gini = 0.2365163 ----------------------------------------------------
 
 # Since the train data is highly unbalanced (much more observations with target 0 than 1), we want to reweight 
 # the train data to build the model
@@ -159,11 +159,10 @@ sub <- sample(1:nrow(train),size=nrow(train)*0.7)
 data.train <- train[sub,]     # Select subset for cross-validation
 data.valid <- train[-sub,]
 
-# ---------- model building --------- #
 # since observations are too big, random sample 10,000 from it to build the model
 random.train1 <- sample_n(data.train,10000) # randomly choose 10,000 observations from training set
 
-# using logistic regression ------------------------------------------------
+# using logistic regression gini = 0.217639 ------------------------------------------------
 glm1 <- glm(as.factor(target)~.-id, data=random.train1, family = binomial(link = 'logit'))
 
 # stepwise regression first run
@@ -298,7 +297,7 @@ tpr.cv
 # 0.2090159
 
 
-# using linear regression --------------------------------------------------------
+# using linear regression gini = 0.2376464 --------------------------------------------------------
 lm1 <- lm(target~.-id,data=random.train1)
 summary(lm1)
 # using stepwise to choose the variables
