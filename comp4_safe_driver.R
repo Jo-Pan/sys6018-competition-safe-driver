@@ -56,7 +56,6 @@ comb[cat_vars]<-lapply(comb[cat_vars],factor)
 train<-comb[is.na(comb$target)==FALSE,]
 test<-comb[is.na(comb$target)==TRUE,]
 
-all1<-train[train$target==1,]
 
 ################  Gini Index  ##################
 #' Calculates unnormalized Gini index from ground truth and predicted probabilities.
@@ -103,7 +102,55 @@ normalized.gini.index = function(ground.truth, predicted.probabilities) {
 
 
 ################  Linear Model  ################## (Teresa)
-# -------- separate train for cross validation ------ #
+#Balanced data (best model) ----------------------------------------------------
+
+# Since the train data is highly unbalanced (much more observations with target 0 than 1), we want to reweight 
+# the train data to build the model
+
+all1<-train[train$target==1,]
+nrow(all1) # 21694
+all0 <- train[train$target==0,]
+nrow(all0) # 573518
+# randomly choose 30000 observations from target = 0 data
+random.0 <- sample_n(all0,30000)
+# combine 30000 of target = 0 data with all the target =1 data
+comb.balance <- rbind(all1, random.0)
+# Then randomly sample 10000 from the balanced data to do the analysis
+random.sample.bal <- sample_n(comb.balance,10000)
+
+bal.lm <- lm(target~.-id,data=random.sample.bal)
+# using stepwise to choose the variables
+step.bal <- stepAIC(bal.lm, direction = 'both')
+step.bal$anova
+# final model
+# target ~ ps_ind_01 + ps_ind_02_cat + ps_ind_03 + ps_ind_04_cat + 
+#  ps_ind_05_cat + ps_ind_07_bin + ps_ind_08_bin + ps_ind_13_bin + 
+#  ps_ind_15 + ps_ind_17_bin + ps_reg_01 + ps_reg_02 + ps_car_01_cat + 
+#  ps_car_04_cat + ps_car_07_cat + ps_car_08_cat + ps_car_13 + 
+#  ps_car_14 + ps_calc_18_bin + ps_calc_19_bin
+
+# cross validate 
+lm.model.cv.bal <- lm(target ~ ps_ind_01 + ps_ind_02_cat + ps_ind_03 + ps_ind_04_cat + 
+                        ps_ind_05_cat + ps_ind_07_bin + ps_ind_08_bin + ps_ind_13_bin + 
+                        ps_ind_15 + ps_ind_17_bin + ps_reg_01 + ps_reg_02 + ps_car_01_cat + 
+                        ps_car_04_cat + ps_car_07_cat + ps_car_08_cat + ps_car_13 + 
+                        ps_car_14 + ps_calc_18_bin + ps_calc_19_bin, data=data.train2)
+prob.lm.cv.bal <- predict(lm.model.cv.bal, newdata=data.valid2,type = 'response')
+
+tpr.cv.lm.bal<-normalized.gini.index(data.valid2[,2],prob.lm.cv.bal) # gini index
+tpr.cv.lm.bal
+# [1] 0.2365163
+
+prob.lm.test.bal <- predict(lm.model.cv.bal, newdata=test)
+prob.lm.test.bal[prob.lm.test.bal<0] = 0
+prob.lm.test.bal[prob.lm.test.bal>1] = 1
+lm.table.bal <- data.frame(test$id, prob.lm.test.bal)
+# write files
+write.table(lm.table.bal, file = 'linearregressionbal.csv',row.names=F, col.names=c("id", "target"), sep=",")
+
+
+
+# separate train for cross validation -------------------------------------
 # originally intend to separate data into training set and validation set
 # But the number of obervations is too huge
 
@@ -116,7 +163,7 @@ data.valid <- train[-sub,]
 # since observations are too big, random sample 10,000 from it to build the model
 random.train1 <- sample_n(data.train,10000) # randomly choose 10,000 observations from training set
 
-# ------- using logistic regression ------- #
+# using logistic regression ------------------------------------------------
 glm1 <- glm(as.factor(target)~.-id, data=random.train1, family = binomial(link = 'logit'))
 
 # stepwise regression first run
@@ -232,7 +279,7 @@ tpr
 prob.reg <- predict(reg.model, newdata=test,type = 'response')
 reg.table <- data.frame(test$id, prob.reg)
 # write files
-write.table(reg.table, file = 'regression.csv',row.names=F, col.names=c("id", "target"), sep=",")
+write.table(reg.table, file = 'logisticregression.csv',row.names=F, col.names=c("id", "target"), sep=",")
 
 # ------ Cross Validation for logistic regression 2nd time ----- #
 set.seed(1)
@@ -251,8 +298,7 @@ tpr.cv
 # 0.2090159
 
 
-
-# -------------- using linear regression --------------- #
+# using linear regression --------------------------------------------------------
 lm1 <- lm(target~.-id,data=random.train1)
 summary(lm1)
 # using stepwise to choose the variables
@@ -277,7 +323,7 @@ tpr
 prob.lm.test <- predict(lm.model, newdata=test)
 lm.table <- data.frame(test$id, prob.lm.test)
 # write files
-write.table(reg.table, file = 'linearregression.csv',row.names=F, col.names=c("id", "target"), sep=",")
+write.table(lm.table, file = 'linearregression.csv',row.names=F, col.names=c("id", "target"), sep=",")
 
 
 # ------ Cross Validation for linear regression 2nd time ----- #
@@ -294,6 +340,7 @@ prob.lm.cv <- predict(lm.model.cv, newdata=data.valid2,type = 'response')
 tpr.cv.lm<-normalized.gini.index(data.valid2[,2],prob.lm.cv) # gini index
 tpr.cv.lm
 # 0.2213452
+
 
 
 
