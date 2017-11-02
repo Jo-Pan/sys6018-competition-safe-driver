@@ -2,7 +2,7 @@
 
 # Team Member
 Teresa Sun  
-Huitong(Jo) Pan   --- hp4zw
+Huitong(Jo) Pan   --- hp4zw        
 Sai  
 
 # Write up
