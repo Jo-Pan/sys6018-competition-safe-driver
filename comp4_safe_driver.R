@@ -233,6 +233,7 @@ tpr.cv
 # -------------- using linear regression --------------- #
 lm1 <- lm(target~.-id,data=random.train1)
 summary(lm1)
+# using stepwise to choose the variables
 step.lm <- stepAIC(lm1, direction = 'both')
 step.lm$anova
 
@@ -342,8 +343,6 @@ balancetrain<-sample_n(rbind(all1,sample_n(train[train$target==0,],30000)),10000
 knnpred<-knn(train=balancetrain[,-c(1:2)],test=test[,-c(1:2)],cl=balancetrain[,2],k=1)
 final_table<-data.frame(test$id, knnpred)
 write.table(final_table, file="knn.csv", row.names=F, col.names=c("id", "target"), sep=",")
-
-############  Step-wise Regression  ############# (Teresa)
 
 ####################  Trees  #################### (Sai)
 
