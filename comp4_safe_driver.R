@@ -94,7 +94,7 @@ data.valid <- train[-sub,]
 # since observations are too big, random sample 10,000 from it to build the model
 random.train1 <- sample_n(data.train,10000) # randomly choose 10,000 observations from training set
 
-# using logistic regression
+# ------- using logistic regression ------- #
 glm1 <- glm(as.factor(target)~.-id, data=random.train1, family = binomial(link = 'logit'))
 
 # stepwise regression first run
@@ -181,10 +181,10 @@ summary(glm1)
 
 # want to try it with 1000 random sample
 # perform the same prodecure as above
-random.train2 <- sample_n(data.train,1000)
-glm2 <- glm(as.factor(target)~.-id, data=random.train2, family = binomial(link = 'logit'))
-step <- stepAIC(glm2, direction="both")
-step$anova
+# random.train2 <- sample_n(data.train,1000)
+# glm2 <- glm(as.factor(target)~.-id, data=random.train2, family = binomial(link = 'logit'))
+# step <- stepAIC(glm2, direction="both")
+# step$anova
 # Final Model:
 # as.factor(target) ~ ps_ind_01 + ps_ind_02_cat + ps_ind_03 + ps_ind_07_bin + 
 #   ps_ind_08_bin + ps_ind_12_bin + ps_reg_02 + ps_reg_03 + ps_car_01_cat + 
@@ -199,16 +199,82 @@ step$anova
 # ------- Using the variables selected from stepwise regression to build logistic model ---------- #
 reg.model<-glm(as.factor(target) ~ ps_ind_15 + ps_ind_17_bin + ps_reg_03 + ps_car_01_cat + 
                   ps_car_09_cat + ps_car_11 + ps_car_12 + ps_car_13 + ps_car_14 + 
-                 ps_car_15 + ps_calc_02 + ps_calc_09 + ps_ind_09_bin, data=random.train1, 
+                 ps_car_15 + ps_calc_02 + ps_calc_09 + ps_ind_09_bin, data=train, 
                family = binomial(link = 'logit'))
+prob.glm <- predict(reg.model, newdata=train,type = 'response')
+
+tpr<-normalized.gini.index(train[,2],prob.glm) # gini index
+tpr
+# 0.217639
+
 prob.reg <- predict(reg.model, newdata=test,type = 'response')
 reg.table <- data.frame(test$id, prob.reg)
 # write files
 write.table(reg.table, file = 'regression.csv',row.names=F, col.names=c("id", "target"), sep=",")
 
+# ------ Cross Validation for logistic regression 2nd time ----- #
+set.seed(1)
+sub2 <- sample(1:nrow(train),size=nrow(train)*0.8)
+data.train2 <- train[sub2,]     # Select subset for cross-validation
+data.valid2 <- train[-sub2,]
+
+reg.model.cv<-glm(as.factor(target) ~ ps_ind_15 + ps_ind_17_bin + ps_reg_03 + ps_car_01_cat + 
+                 ps_car_09_cat + ps_car_11 + ps_car_12 + ps_car_13 + ps_car_14 + 
+                 ps_car_15 + ps_calc_02 + ps_calc_09 + ps_ind_09_bin, data=data.train2, 
+               family = binomial(link = 'logit'))
+prob.glm.cv <- predict(reg.model, newdata=data.valid2,type = 'response')
+
+tpr.cv<-normalized.gini.index(data.valid2[,2],prob.glm.cv) # gini index
+tpr.cv
+# 0.2090159
 
 
-### Basic Model ### (Jo)(can be deleted/commented out)
+
+# -------------- using linear regression --------------- #
+lm1 <- lm(target~.-id,data=random.train1)
+summary(lm1)
+step.lm <- stepAIC(lm1, direction = 'both')
+step.lm$anova
+
+# Final Model:
+#   target ~ ps_ind_05_cat + ps_ind_15 + ps_ind_17_bin + ps_reg_03 + 
+#   ps_car_01_cat + ps_car_04_cat + ps_car_09_cat + ps_car_13 + 
+#   ps_car_14 + ps_calc_02 + ps_calc_09 + ps_ind_09_bin
+
+lm.model <- lm(target ~ ps_ind_05_cat + ps_ind_15 + ps_ind_17_bin + ps_reg_03 + 
+                    ps_car_01_cat  + ps_car_04_cat+ ps_car_09_cat + ps_car_13 + 
+                    ps_car_14 + ps_calc_02 + ps_calc_09 + ps_ind_09_bin, data=train)
+prob.lm <- predict(lm.model, newdata=train)
+# prob.lm[prob.lm <0] <- 0
+# prob.lm[prob.lm >1] <- 1
+tpr<-normalized.gini.index(train[,2],prob.lm)
+tpr
+# 0.2376464
+
+prob.lm.test <- predict(lm.model, newdata=test)
+lm.table <- data.frame(test$id, prob.lm.test)
+# write files
+write.table(reg.table, file = 'linearregression.csv',row.names=F, col.names=c("id", "target"), sep=",")
+
+
+# ------ Cross Validation for linear regression 2nd time ----- #
+set.seed(1)
+sub2 <- sample(1:nrow(train),size=nrow(train)*0.8)
+data.train2 <- train[sub2,]     # Select subset for cross-validation
+data.valid2 <- train[-sub2,]
+
+lm.model.cv <- lm(target ~ ps_ind_05_cat + ps_ind_15 + ps_ind_17_bin + ps_reg_03 + 
+                 ps_car_01_cat  + ps_car_04_cat+ ps_car_09_cat + ps_car_13 + 
+                 ps_car_14 + ps_calc_02 + ps_calc_09 + ps_ind_09_bin, data=data.train2)
+prob.lm.cv <- predict(lm.model.cv, newdata=data.valid2,type = 'response')
+
+tpr.cv.lm<-normalized.gini.index(data.valid2[,2],prob.lm.cv) # gini index
+tpr.cv.lm
+# 0.2213452
+
+
+
+### Basic Model ### (Jo)(can be deleted/commented out) used for initial submission
 # mypred<-predict(lmraw,newdata = test)
 # mypred[mypred<0]<-0
 # mypred[mypred>1]<-1
