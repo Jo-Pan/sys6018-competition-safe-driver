@@ -591,30 +591,172 @@ importance(rf.porto)
 
 
 # Boosting
-
+#Boosting 1------------------------------------------------------------------------------------
 train5 <- train2[sample(nrow(train2), 10000), ]
+train5$target<-as.factor(train5$target)
+levels(train5$target) <- make.names(levels(factor(train5$target)))
+
+library(caret)
+objControl <- trainControl(method='cv', number=3, returnResamp='none', summaryFunction = twoClassSummary, classProbs = TRUE)
+gbmGrid <-  expand.grid(interaction.depth = c(1, 5, 10), 
+                        n.trees = c(50,100,500,1000,1500), 
+                        shrinkage = c(0.1,0.01,0.001),
+                        n.minobsinnode = c(10,20))
+objModel <- train(train5[,-c(1,2)], train5[,2], 
+                  method='gbm', 
+                  trControl=objControl,  
+                  metric = "ROC",
+                  preProc = c("center", "scale"),
+                  tuneGrid = gbmGrid)
+#Boosting 1 train summary ------------------------------------------------------------------------
+summary(objModel)
+# var     rel.inf
+# ps_car_06_cat   ps_car_06_cat 22.03165674
+# ps_car_13           ps_car_13 14.75327775
+# ps_car_01_cat   ps_car_01_cat 12.82256031
+# ps_ind_05_cat   ps_ind_05_cat  7.99337009
+# ps_reg_03           ps_reg_03  5.51148099
+# ps_car_09_cat   ps_car_09_cat  3.56288546
+# ps_car_14           ps_car_14  3.23284808
+# ps_ind_15           ps_ind_15  2.77970094
+# ps_ind_03           ps_ind_03  2.36881750
+# ps_calc_13         ps_calc_13  2.25026944
+# ps_car_15           ps_car_15  1.94172940
+# ps_reg_02           ps_reg_02  1.89683400
+# ps_ind_01           ps_ind_01  1.62794619
+# ps_calc_11         ps_calc_11  1.57151831
+# ps_calc_14         ps_calc_14  1.56407381
+# ps_calc_12         ps_calc_12  1.49601807
+# ps_calc_02         ps_calc_02  1.26637475
+# ps_car_12           ps_car_12  1.23922587
+# ps_calc_03         ps_calc_03  1.23512725
+# ps_calc_07         ps_calc_07  1.18022965
+# ps_calc_01         ps_calc_01  1.06972823
+# ps_reg_01           ps_reg_01  0.90786879
+# ps_ind_06_bin   ps_ind_06_bin  0.83844095
+# ps_calc_10         ps_calc_10  0.70949013
+# ps_calc_09         ps_calc_09  0.59376955
+# ps_ind_04_cat   ps_ind_04_cat  0.53937635
+# ps_calc_06         ps_calc_06  0.42583904
+# ps_ind_16_bin   ps_ind_16_bin  0.35234179
+# ps_calc_08         ps_calc_08  0.30768537
+# ps_ind_02_cat   ps_ind_02_cat  0.25891251
+# ps_car_04_cat   ps_car_04_cat  0.21760200
+# ps_ind_07_bin   ps_ind_07_bin  0.21621282
+# ps_calc_17_bin ps_calc_17_bin  0.21068628
+# ps_calc_18_bin ps_calc_18_bin  0.19533569
+# ps_ind_08_bin   ps_ind_08_bin  0.18714070
+# ps_calc_15_bin ps_calc_15_bin  0.16587587
+# ps_car_02_cat   ps_car_02_cat  0.15007212
+# ps_calc_19_bin ps_calc_19_bin  0.13244138
+# ps_calc_05         ps_calc_05  0.11305711
+# ps_car_11           ps_car_11  0.08217873
+
+print(objModel)
+# shrinkage	interaction.depth	n.minobsinnode	n.trees	ROC	Sens
+# 0.01	5	20	100	0.6298884	1
+# 0.01	5	10	50	0.6297854	1
+# 0.001	5	10	1000	0.6293613	1
+# 0.001	10	10	100	0.6291573	1
+# 0.001	5	20	500	0.6287911	1
+
+# ROC was used to select the optimal model using  the largest value.
+# The final values used for the model were n.trees = 100, interaction.depth =
+#   5, shrinkage = 0.01 and n.minobsinnode = 20.
+
+#Boosting 1 gini = 0.2027495------
+model.tree1 <- predict(objModel, newdata = test[,-c(1,2)],type="prob")
+
+normalized.gini.index(as.numeric(test$target),model.tree1$X2)
+#0.2027495
+
+#Boosting 2 gini = 0.2143287 ------------------------------------------------------------------------
+gbmGrid2 <-  expand.grid(interaction.depth = 5, 
+                        n.trees = c(1000,2000), 
+                        shrinkage = c(0.001,0.0001),
+                        n.minobsinnode = 10)
+objModel2 <- train(train5[,-c(1,2)], train5[,2], 
+                  method='gbm', 
+                  trControl=objControl,  
+                  metric = "ROC",
+                  preProc = c("center", "scale"),
+                  tuneGrid = gbmGrid2)
+print(objModel2)
+#he final values used for the model were n.trees = 2000, interaction.depth =
+#5, shrinkage = 1e-04 and n.minobsinnode = 10.
+model.tree2 <- predict(objModel2, newdata = test[,-c(1,2)],type="prob")
+
+normalized.gini.index(as.numeric(test$target),model.tree2$X1)
+#0.2143287
+
+#Boosting 3 gini = 0.2182747 ------------------------------------------------------------------------
+gbmGrid3 <-  expand.grid(interaction.depth = 5, 
+                         n.trees = c(2000,5000), 
+                         shrinkage = 0.0001,
+                         n.minobsinnode = 10)
+objModel3 <- train(train5[,-c(1,2)], train5[,2], 
+                   method='gbm', 
+                   trControl=objControl,  
+                   metric = "ROC",
+                   preProc = c("center", "scale"),
+                   tuneGrid = gbmGrid3)
+
+print(objModel3)
+#The final values used for the model were n.trees = 5000, interaction.depth =
+#5, shrinkage = 1e-04 and n.minobsinnode = 10.
+model.tree3 <- predict(objModel3, newdata = test[,-c(1,2)],type="prob")
+normalized.gini.index(as.numeric(test$target),model.tree3$X1)
+
+#0.2182747
 
 
-library(gbm)
-boost.porto =gbm(target~.,data=train5, distribution = "bernoulli", n.trees =500, interaction.depth = 10, shrinkage = 0.2, verbose = F)
 
-# actually, in my boosting model, there are no predictors that had non zero influence!
+#Boosting 4 (Balanced data) gini = 0.2692118 ------------------------------------------------------------------------
+all1<-train2[train2$target==1,]
+nrow(all1) # 21694
+all0 <- train2[train2$target==0,]
+nrow(all0) # 573518
+# randomly choose 30000 observations from target = 0 data
+random.0 <- sample_n(all0,30000)
+# combine 30000 of target = 0 data with all the target =1 data
+comb.balance <- rbind(all1, random.0)
+# Then randomly sample 10000 from the balanced data to do the analysis
+random.sample.bal <- sample_n(comb.balance,10000)
+random.sample.bal$target<-as.factor(random.sample.bal$target)
+levels(random.sample.bal$target) <- make.names(levels(factor(random.sample.bal$target)))
 
-#"A gradient boosted model with bernoulli loss function.
-#500 iterations were performed.
-#There were 55 predictors of which 0 had non-zero influence."
+objModel4 <- train(random.sample.bal[,-c(1,2)], random.sample.bal[,2], 
+                   method='gbm', 
+                   trControl=objControl,  
+                   metric = "ROC",
+                   preProc = c("center", "scale"),
+                   tuneGrid = gbmGrid3)
+print(objModel4)
+#The final values used for the model were n.trees = 5000, interaction.depth =
+#5, shrinkage = 1e-04 and n.minobsinnode = 10.
 
-summary(boost.porto)
+model.tree4 <- predict(objModel4, newdata = test[,-c(1,2)],type="prob")
+normalized.gini.index(as.numeric(test$target),model.tree4$X1)
 
-yhat.bag <- predict(boost.porto, newdata = test, n.trees = 50)
+#Boosting 5 (All balanced data)   ------------------------------------------------------------------------
+comb.balance$target<-as.factor(comb.balance$target)
+levels(comb.balance$target) <- make.names(levels(factor(comb.balance$target)))
+gbmGrid5 <-  expand.grid(interaction.depth = 5, 
+                         n.trees = c(5000), 
+                         shrinkage = 0.0001,
+                         n.minobsinnode = 10)
 
-yhat.bag
+objModel5 <- train(comb.balance[,-c(1,2)], comb.balance[,2], 
+                   method='gbm', 
+                   trControl=objControl,  
+                   metric = "ROC",
+                   preProc = c("center", "scale"),
+                   tuneGrid = gbmGrid5)
 
-prob <- predict(boost.porto, test, type = "prob")
-
-
-summary(yhat.bag)
-table(yhat.bag,test$target)
-
-
+#Boosting 5 Final Submission ------------------
+test.all<-read.csv("test 2.csv") #595212,59
+test.all[c("ps_car_11_cat")] <- list(NULL) 
+boosting <- predict(objModel5, newdata = test.all[,-c(1)],type="prob")
+final_table<-data.frame(test.all$id, boosting$X1)
+write.table(final_table, file="boosting.csv", row.names=F, col.names=c("id", "target"), sep=",")
 
