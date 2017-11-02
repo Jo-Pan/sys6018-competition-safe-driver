@@ -1,9 +1,15 @@
 # sys6018-competition-safe-driver
 
 # Team Member
-Teresa Sun
-Jo Pan
-Sai
+Teresa Sun  
+Huitong(Jo) Pan   --- hp4zw
+Sai  
+
+# Write up
+Who might care about it and why?       
+
+Why might it be a challenging problem to address?       
+What other problems resemble this problem?       
 
 # Regression Model (Teresa)
 Since we have such a large number of observations, instead of using all the observations, we randomly chose 10,000 observations from train data to select variables and build the model. 
