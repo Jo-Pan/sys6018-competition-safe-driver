@@ -22,16 +22,16 @@
 | Boosting   |  balanced data(51K)) | ntree=5000,in.depth=5,shrinkage=0.001   |        |        0.219       | 
 
 # Write up
-Who might care about it and why?       
+**Who might care about it and why?**       
 Insurance Companies will care about it because identifying risky customers can reduce their cost.
 
-Why might it be a challenging problem to address?  
+**Why might it be a challenging problem to address?**          
 1) We don't have any description on the variables and we have no idea what do they mean.
 2) We are trying to use past data to inform future claim patterns. 
 3) Insurance is a case-by-case problem. If we want to use data to predict, it may cause problem of high false positive rate.
 4) Insurance data is highly biased toward non-claim target. Predicting with a biased data can be problemetic.
 
-What other problems resemble this problem?       
+**What other problems resemble this problem?**       
 1) Any other insurance problem      
 2) Cancer prediction problem in terms of data bias. 
 
