@@ -8,10 +8,10 @@
 | Sai             |  lbs7aa       | decision tree, bagging, random forest | 
 
 # Models Summary
-|    Model Name   | Data used to train   |    Parameter     | Gini kaggle score  |
-| -------------   | -------------------  | -------------    |------------------- |
-| Linear Model    |  balanced data       |   ?? var         |                    | 
-| Random Forest   |  balanced data       | best:mtry=7      |    0.245           | 
+|    Model Name   | Data used to train   | Gini kaggle score  |
+| -------------   | -------------------  |------------------- |
+| Linear Model    |  balanced data       |    0.237           | 
+| Random Forest   |  balanced data       |    0.245           | 
 
 # Write up
 **Who might care about it and why?**       
