@@ -11,7 +11,7 @@
 |    Model Name   | Data used to train   |    Parameter     | Gini kaggle score  |
 | -------------   | -------------------  | -------------    |------------------- |
 | Linear Model    |  balanced data       |   ?? var         |                    | 
-| Random Forest   |  balanced data       | best:mtry=7      |    0.2245          | 
+| Random Forest   |  balanced data       | best:mtry=7      |    0.245           | 
 
 # Write up
 **Who might care about it and why?**       
