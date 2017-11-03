@@ -15,7 +15,7 @@
 
 # Write up
 **Who might care about it and why?**       
-Insurance Companies will care about it because identifying risky customers can reduce their cost.
+Insurance Companies generally will care about it because correctly identifying risky customers can reduce their cost. Also customers who are seeking insurance plan will care about the problem because It doesn’t seem fair that you have to pay so much if you’ve been cautious on the road for years. These two sides are both hoping this model could save them some costs.
 
 **Why might it be a challenging problem to address?**          
 1) We don't have any description on the variables and we have no idea what do they mean.
