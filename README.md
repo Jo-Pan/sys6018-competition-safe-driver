@@ -10,7 +10,7 @@
 # Models Summary
 |    Model Name   | Data used to train   | Gini kaggle score  |
 | -------------   | -------------------  |------------------- |
-| Linear Model    |  balanced data       |    0.237           | 
+| Linear Model    |  balanced data       |    0.247           | 
 | Random Forest   |  balanced data       |    0.245           | 
 
 # Write up
@@ -31,9 +31,10 @@ Insurance Companies will care about it because identifying risky customers can r
 We dropped a couple of columns that contained too many NA's and we imputed the NA values with mean for all the other columns for rows which had NA's. We also factorized the relavent columns and had to remove a column out of predictors since it had 104 levels despite being a factor variable (R doesn't allow beyond 32 levels for factor variables).
 
 # Regression Model (Teresa)
-Since we have such a large number of observations, instead of using all the observations, we randomly chose 10,000 observations from train data to select variables and build the model. 
+Since we have such a large number of observations and have class imbalance issue, instead of using all the observations, we
+first balance the data with a class ratio of close to 1:1 (roughly with 30,000 to 30,000 observations). Since the data is too large to build the model, we randomly chose 10,000 from the balanced data to build the model.
 
-Using stepwise regression, we were able to choose (ps_ind_15 + ps_ind_17_bin + ps_reg_03 + ps_car_01_cat + ps_car_09_cat + ps_car_11 + ps_car_12 + ps_car_13 + ps_car_14 + ps_car_15 + ps_calc_02 + ps_calc_09 + ps_ind_09_bin) as parameters to build logistic regression model.
+Using stepwise regression, we were able to choose ps_ind_01 + ps_ind_02_cat + ps_ind_03 + ps_ind_04_cat + ps_ind_05_cat + ps_ind_07_bin + ps_ind_08_bin + ps_ind_13_bin + ps_ind_15 + ps_ind_17_bin + ps_reg_01 + ps_reg_02 + ps_car_01_cat + ps_car_04_cat + ps_car_07_cat + ps_car_08_cat + ps_car_13 + ps_car_14 + ps_calc_18_bin + ps_calc_19_bin as parameters to build logistic regression model. The gini on kaggle for this linear regression model is 0.247.
 
 # Tree based methods (Sai, Jo)
 
