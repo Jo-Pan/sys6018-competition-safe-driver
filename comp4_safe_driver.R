@@ -473,14 +473,7 @@ points(tree.min, cv.porto$dev[tree.min], col = "red", cex = 2, pch = 20)
 plot(tree.porto)
 text(tree.porto, pretty = 0)
 
-
-
-
-
-# lets explore some more trees based approaches. we will see what turns up
-
-
-
+# oh. its a single node tree
 
 
 # bagging approach
@@ -493,8 +486,6 @@ test = train2[sample(nrow(train2), 10000), ]
 
 summary(train3$target)
 
-# 3.66% are 1's. This is pretty close to real value
-
 bag.porto <- randomForest(target ~ ., data = train3, mtry = 55, ntree = 5, importance = TRUE)
 yhat.bag <- predict(bag.porto, newdata = test, type = "class")
 
@@ -503,7 +494,7 @@ table(yhat.bag,test$target)
 
 prob <- predict(bag.porto, test, type = "prob")
 
-# there's a key learning here. Classification trees run much faster than regression trees. Tried that
+# there's a key learning here. Classification trees run much faster than regression trees. Tried that just to check
 
 #yhat.bag   0       1
 #   0       9608    353
@@ -532,7 +523,8 @@ summary(myrf)
 plot(myrf)
 
 # The results are really inconclusive. My laptops computing power is not enough to use a larger training set
-# For this project, mtry = 7 (close to square root of 55)
+
+# For this project, we are going to stick to mtry = 7 (close to square root of 55)
 
 train4 <- train2[sample(nrow(train2), 10000), ]
 rf.porto <- randomForest(target ~ ., data = train4, mtry = 8, ntree = 500, importance = TRUE)
@@ -557,7 +549,7 @@ table(yhat.rf,train2$target)
 #0          96161  3200
 #1           156   483
 
-# for sample = 100,000 and ntree = 50 (the maximum my laptop can reasonably run probably)
+# for sample = 100,000 and ntree = 50 (the maximum my laptop can run probably)
 
 #yhat.bag     0     1
 #0          96333  3033
@@ -579,6 +571,8 @@ normalized.gini.index(as.numeric(train2$target),prob$`1`)
 #0.1999 that's decent. 
 
 # Need to tinker with balancing data proportion. Cost functions won't help because we can make the model classify more 1's but it won't fundamentally alter probabilities like the way balancing does
+
+# what is the optimal data distribution? Lets find out
 
 gini <- c()
 
@@ -618,7 +612,7 @@ gini <- c(gini, normalized.gini.index(as.numeric(test$target),prob$`1`), p, k)
 
 # The best gini's are produced by close to balanced training set or slight bias towards 0's. Models that are extremely biased towards one class have bad gini's
 
-# training one final model
+# training the final model
 
 all1<-train2[train2$target==1,]
 random.1 <- sample_n(all1,10000)
@@ -639,7 +633,7 @@ prob <- as.data.frame(predict(rf.comb.porto, test, type = "prob"))
 
 gini_1012 <- normalized.gini.index(as.numeric(test$target),prob$`1`)
 
-#gini_1012  0.2557
+#gini_1012  0.2557 on the training set
 
 
 
@@ -667,6 +661,7 @@ rf3result <- predict(myrf3, newdata = test.all[,-c(1)],type="prob")
 final_table<-data.frame(test.all$id, rf3result$X1)
 write.table(final_table, file="rf_bal.csv", row.names=F, col.names=c("id", "target"), sep=",")
 
+# Kaggle score gini: 0.243
 
 # Let me try calculating probabilities in another way (also slightly altering ratio). Also training on literally all the 1's. Can't get better than that unless I fundamentally alter the setting.
 
@@ -677,8 +672,7 @@ all0 <- train2[train2$target==0,]
 random.0 <- sample_n(all0,21694)
 comb.balance <- rbind(random.1, random.0)
 
-# We wish to maintain the class ratio in test set. Hence further adjustments to the test set.
-
+# probabilities on the actual testing set
 
 rf.comb.porto <- randomForest(target ~ ., data = comb.balance, mtry = 7, ntree = 1000, importance = TRUE)
 prob <- as.data.frame(predict(rf.comb.porto, test, type = "prob"))
@@ -686,8 +680,7 @@ prob <- as.data.frame(predict(rf.comb.porto, test, type = "prob"))
 final_table2 <- data.frame(test$id, prob$`1`)
 write.table(final_table2, file="rf_bal_2nd.csv", row.names=F, col.names=c("id", "target"), sep=",")
 
-
-#0.245 that's it
+#0.245 kaggle score
 
 
 
@@ -862,28 +855,3 @@ test.all[c("ps_car_11_cat")] <- list(NULL)
 boosting <- predict(objModel5, newdata = test.all[,-c(1)],type="prob")
 final_table<-data.frame(test.all$id, boosting$X1)
 write.table(final_table, file="boosting.csv", row.names=F, col.names=c("id", "target"), sep=",")
-
-
-#random forest  gini = 0.1673073 --------------------------------------------------------------------------
-tunegrid <- expand.grid(mtry=c(1:15))
-myrf <- train(train5[,-c(1,2)], train5[,2], 
-                        method="rf", 
-                        metric="ROC", 
-                        tuneGrid=tunegrid, 
-                        trControl=objControl)
-print(myrf)
-#The final value used for the model was mtry = 2.
-rf1<-predict(myrf, newdata = test[,-c(1,2)],type="prob")
-normalized.gini.index(as.numeric(test$target),rf1$X1) #0.1673073
-
-
-#random forest with balanced data  gini = 0.3834081 --------------------------------------------------------------------------
-myrf2 <- train(random.sample.bal[,-c(1,2)], random.sample.bal[,2], 
-               method="rf", 
-               metric="ROC", 
-               tuneGrid=tunegrid, 
-               trControl=objControl)
-print(myrf2)
-#The final value used for the model was mtry = 7
-rf2<-predict(myrf2, newdata = test[,-c(1,2)],type="prob")
-normalized.gini.index(as.numeric(test$target),rf2$X1) #0.3834081
