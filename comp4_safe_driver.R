@@ -773,17 +773,6 @@ print(myrf)
 rf1<-predict(myrf, newdata = test[,-c(1,2)],type="prob")
 normalized.gini.index(as.numeric(test$target),rf1$X1) #0.1673073
 
-#random forest  gini = 0.1673073 --------------------------------------------------------------------------
-tunegrid <- expand.grid(mtry=c(1:15))
-myrf <- train(train5[,-c(1,2)], train5[,2], 
-                        method="rf", 
-                        metric="ROC", 
-                        tuneGrid=tunegrid, 
-                        trControl=objControl)
-print(myrf)
-#The final value used for the model was mtry = 2.
-rf1<-predict(myrf, newdata = test[,-c(1,2)],type="prob")
-normalized.gini.index(as.numeric(test$target),rf1$X1) #0.1673073
 
 #random forest with balanced data  gini = 0.3834081 --------------------------------------------------------------------------
 myrf2 <- train(random.sample.bal[,-c(1,2)], random.sample.bal[,2], 
