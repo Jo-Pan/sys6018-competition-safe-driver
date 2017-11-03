@@ -510,84 +510,187 @@ prob <- predict(bag.porto, test, type = "prob")
 #   1       39      8 
 
 
+
 # random forest
 
-train4 <- train2[sample(nrow(train2), 10000), ]
-test = train2[sample(nrow(train2), 10000), ]
+library(caret)
 
-rf.porto <- randomForest(target ~ ., data = train4, mtry = 8, ntree = 5, importance = TRUE)
-yhat.bag <- predict(rf.porto, newdata = test, type = "class")
+objControl <- trainControl(method='cv', number=3, returnResamp='none', summaryFunction = twoClassSummary, classProbs = TRUE)
+
+train5 <- train2[sample(nrow(train2), 1000), ]
+train5$target<-as.factor(train5$target)
+levels(train5$target) <- make.names(levels(factor(train5$target)))
+
+
+tunegrid <- expand.grid(mtry=c(5:15))
+myrf <- train(train5[,-c(1,2)], train5[,2], 
+              method="rf", 
+              metric="ROC", 
+              tuneGrid=tunegrid, 
+              trControl=objControl)
+summary(myrf)
+plot(myrf)
+
+# The results are really inconclusive. My laptops computing power is not enough to use a larger training set
+# For this project, mtry = 7 (close to square root of 55)
+
+train4 <- train2[sample(nrow(train2), 10000), ]
+rf.porto <- randomForest(target ~ ., data = train4, mtry = 8, ntree = 500, importance = TRUE)
+yhat.rf <- predict(rf.porto, newdata = train2, type = "class")
 
 # mtry is square root of total predictors
 
-summary(yhat.bag)
-table(yhat.bag,test$target)
+# I have realized that to do better on gini especially on this data set, probability of 1 should  be close to zero for most of the rows (class imbalance). The probability is better estimated by random forests if I increase the number of trees rather than sample size of training.
+
+summary(yhat.rf)
+table(yhat.rf,train2$target)
+
+#for sample = 10,000 and ntree = 5
 
 #yhat.bag   0     1
 #0         9607   360
 #1          29    4
 
-prob <- predict(rf.porto, test, type = "prob")
+#for sample = 100,000 and ntree = 5
 
-importance(rf.porto)
+#yhat.bag     0     1
+#0          96161  3200
+#1           156   483
+
+# for sample = 100,000 and ntree = 50 (the maximum my laptop can reasonably run probably)
+
+#yhat.bag     0     1
+#0          96333  3033
+#1            0   634
+
+# Overall, it seems like many 1's are being misclassified. Need to fix that
+
+# sample size 10,000  number of trees = 500 (I bet this will have the highest gini)
+
+#yhat.rf      0      1
+#0 573516  21282
+#1      2    412
 
 
-#                         0           1 MeanDecreaseAccuracy MeanDecreaseGini
-# id             -0.04025452  1.19480792           0.22436613     38.435765253
-# ps_ind_01       7.26756030  0.66030796           7.37068398     16.014471436
-# ps_ind_02_cat   6.31924829 -2.76233898           5.73173411      7.723166354
-# ps_ind_03       9.63014257 -0.80416356           9.39749901     22.728275983
-# ps_ind_04_cat   3.02688606 -1.15456769           2.76923899      2.717580042
-# ps_ind_05_cat   3.40735190  5.59960499           4.80798570     12.870403906
-# ps_ind_06_bin   6.32610310 -4.30309718           5.68893905      4.070708102
-# ps_ind_07_bin   9.10699732  0.43839186           9.01106816      4.616474510
-# ps_ind_08_bin  -0.16343486 -0.47308637          -0.24338395      3.729193202
-# ps_ind_09_bin   2.23581646  0.22723215           2.27478513      3.424232808
-# ps_ind_10_bin   0.00000000  0.00000000           0.00000000      0.006555556
-# ps_ind_11_bin  -0.63149883  0.50181888          -0.53881494      0.900562965
-# ps_ind_12_bin  -1.29387359 -0.28742447          -1.35540318      0.675569327
-# ps_ind_13_bin   0.00000000  0.00000000           0.00000000      0.011000000
-# ps_ind_14      -0.46055574 -0.93651001          -0.64025888      1.151615790
-# ps_ind_15       4.14353762 -2.98249073           3.56687577     20.458815383
-# ps_ind_16_bin   3.32474858  1.04347526           3.37351544      4.683771938
-# ps_ind_17_bin   3.32909503 -1.47988561           3.10815190      4.115044208
-# ps_ind_18_bin   4.87978072 -1.94385470           4.55183159      3.765969895
-# ps_reg_01       9.10131802 -2.13150926           8.68911012     14.916797865
-# ps_reg_02      15.76111410 -4.58177899          15.28321769     21.291418343
-# ps_reg_03      17.64536016 -4.24819971          17.21763925     35.080668913
-# ps_car_01_cat  12.15826592 -1.09687902          11.82951055     21.893125697
-# ps_car_02_cat   5.17487659 -0.84526378           5.05511422      1.823042205
-# ps_car_04_cat  10.31848484 -4.44213631          10.37836365      7.594751139
-# ps_car_06_cat  15.19963665 -3.16994795          14.75500687     34.450838803
-# ps_car_07_cat   1.93152475  0.97869192           2.14254174      2.415850881
-# ps_car_08_cat   5.36645517 -1.63867233           5.04314170      2.461433323
-# ps_car_09_cat   9.55069867 -2.15774461           9.18570057      9.569265712
-# ps_car_10_cat   0.86159299 -1.13184780           0.60131984      1.008233945
-# ps_car_11       8.07042022 -1.54194628           7.98228545      7.825892097
-# ps_car_12      15.69841377 -5.80065546          15.60270581     16.655136838
-# ps_car_13      23.24586819 -6.19574103          23.08973305     36.670207999
-# ps_car_14      17.23885918 -4.07272447          16.97557335     31.099228675
-# ps_car_15      11.96761504 -2.70281046          11.70712394     17.871010417
-# ps_calc_01      0.29694591  0.85880967           0.47588421     18.769930229
-# ps_calc_02     -0.15760363  1.16557736           0.08235381     19.186725772
-# ps_calc_03     -0.58138077 -0.74451936          -0.72507750     19.991917859
-# ps_calc_04      1.48638950  0.65619288           1.58804445     15.620913856
-# ps_calc_05     -0.68430568  0.31019346          -0.60348025     13.714182263
-# ps_calc_06     -1.67403848  0.04657021          -1.61485861     16.520092623
-# ps_calc_07      1.90385655  1.62223998           2.21127337     17.594644864
-# ps_calc_08     -1.92376163  0.07354145          -1.87086006     19.185903123
-# ps_calc_09      0.96613520 -0.32422003           0.88134313     16.891908493
-# ps_calc_10      0.77287775  0.16943014           0.74451541     23.171962667
-# ps_calc_11     -0.60163415  0.15572323          -0.54568160     22.328087578
-# ps_calc_12      0.82113456  0.16485055           0.84045166     14.335544525
-# ps_calc_13     -1.32710452  1.12377149          -1.06006525     20.847960793
-# ps_calc_14     -0.97513747  0.10661703          -0.97331766     22.352432738
-# ps_calc_15_bin -0.56437663  1.21231494          -0.35806428      4.597289599
-# ps_calc_16_bin -1.30474076 -0.44964802          -1.33012676      5.060269362
-# ps_calc_17_bin  0.18868541  1.93110915           0.65823878      5.496522677
-# ps_calc_18_bin  2.29677307 -0.33518759           2.13992097      5.323885313
-# ps_calc_19_bin -0.22784601 -0.05488170          -0.22386072      5.717105071
-# ps_calc_20_bin  0.30370860  0.50430792           0.39440685      3.522452208
+prob <- as.data.frame(predict(rf.porto, train2, type = "prob"))
+
+normalized.gini.index(as.numeric(train2$target),prob$`1`)
+
+#0.1999 that's decent. 
+
+# Need to tinker with balancing data proportion. Cost functions won't help because we can make the model classify more 1's but it won't fundamentally alter probabilities like the way balancing does
+
+gini <- c()
+
+for (p in 1:10) {
+
+  for (k in 1:10) {
+    
+  
+all1<-train2[train2$target==1,]
+random.1 <- sample_n(all1,1000*p)
+
+all0 <- train2[train2$target==0,]
+random.0 <- sample_n(all0,1000*k)
+comb.balance <- rbind(random.1, random.0)
+
+sid<-as.numeric(rownames(comb.balance))
+test<-train2[-sid,]
+
+# We wish to maintain the class ratio in test set. Hence further adjustments to the test set.
+
+test <- test[sample(nrow(test), ((21694 - 1000*p)*570000/21694)), ]
+
+rf.comb.porto <- randomForest(target ~ ., data = comb.balance, mtry = 7, ntree = 500, importance = TRUE)
+prob <- as.data.frame(predict(rf.comb.porto, test, type = "prob"))
+
+gini <- c(gini, normalized.gini.index(as.numeric(test$target),prob$`1`), p, k)
+
+}
+}
+
+
+# write.csv(gini, file = "full_clean_noNA.csv", row.names = FALSE)
+
+# The following trends are observed in the results broadly
+
+# Gini tends to go up with sample size of training (obvious)
+
+# The best gini's are produced by close to balanced training set or slight bias towards 0's. Models that are extremely biased towards one class have bad gini's
+
+# training one final model
+
+all1<-train2[train2$target==1,]
+random.1 <- sample_n(all1,10000)
+
+all0 <- train2[train2$target==0,]
+random.0 <- sample_n(all0,12000)
+comb.balance <- rbind(random.1, random.0)
+
+sid<-as.numeric(rownames(comb.balance))
+test<-train2[-sid,]
+
+# We wish to maintain the class ratio in test set. Hence further adjustments to the test set.
+
+test <- test[sample(nrow(test), ((21694 - 1000*p)*570000/21694)), ]
+
+rf.comb.porto <- randomForest(target ~ ., data = comb.balance, mtry = 7, ntree = 500, importance = TRUE)
+prob <- as.data.frame(predict(rf.comb.porto, test, type = "prob"))
+
+gini_1012 <- normalized.gini.index(as.numeric(test$target),prob$`1`)
+
+#gini_1012  0.2557
+
+
+
+library(caret)
+
+test.all = test
+
+test.all[c("ps_car_11_cat")] <- list(NULL) 
+
+comb.balance$target<-as.factor(comb.balance$target)
+levels(comb.balance$target) <- make.names(levels(factor(comb.balance$target)))
+
+objControl <- trainControl(method='cv', number=3, returnResamp='none', summaryFunction = twoClassSummary, classProbs = TRUE)
+
+tunegrid <- expand.grid(mtry=c(7))
+myrf3 <- train(comb.balance[,-c(1,2)], comb.balance[,2], 
+               method="rf", 
+               metric="ROC", 
+               tuneGrid=tunegrid, 
+               trControl=objControl)
+
+
+
+rf3result <- predict(myrf3, newdata = test.all[,-c(1)],type="prob")
+final_table<-data.frame(test.all$id, rf3result$X1)
+write.table(final_table, file="rf_bal.csv", row.names=F, col.names=c("id", "target"), sep=",")
+
+
+# Let me try calculating probabilities in another way (also slightly altering ratio). Also training on literally all the 1's. Can't get better than that unless I fundamentally alter the setting.
+
+all1<-train2[train2$target==1,]
+random.1 <- sample_n(all1,21694)
+
+all0 <- train2[train2$target==0,]
+random.0 <- sample_n(all0,21694)
+comb.balance <- rbind(random.1, random.0)
+
+# We wish to maintain the class ratio in test set. Hence further adjustments to the test set.
+
+
+rf.comb.porto <- randomForest(target ~ ., data = comb.balance, mtry = 7, ntree = 1000, importance = TRUE)
+prob <- as.data.frame(predict(rf.comb.porto, test, type = "prob"))
+
+final_table2 <- data.frame(test$id, prob$`1`)
+write.table(final_table2, file="rf_bal_2nd.csv", row.names=F, col.names=c("id", "target"), sep=",")
+
+
+#0.245 that's it
+
+
+
 
 
 # Boosting
@@ -784,20 +887,3 @@ print(myrf2)
 #The final value used for the model was mtry = 7
 rf2<-predict(myrf2, newdata = test[,-c(1,2)],type="prob")
 normalized.gini.index(as.numeric(test$target),rf2$X1) #0.3834081
-
-#random forest with all balanced data  gini = 0.9997988 --------------------------------------------------------------------------
-tunegrid <- expand.grid(mtry=c(7))
-myrf3 <- train(comb.balance[,-c(1,2)], comb.balance[,2], 
-              method="rf", 
-              metric="ROC", 
-              tuneGrid=tunegrid, 
-              trControl=objControl)
-print(myrf3)
-
-rf3<-predict(myrf3, newdata = test[,-c(1,2)],type="prob")
-normalized.gini.index(as.numeric(test$target),rf3$X1) # 0.9997988
-
-rf3result <- predict(objModel5, newdata = test.all[,-c(1)],type="prob")
-final_table<-data.frame(test.all$id, rf3result$X1)
-write.table(final_table, file="rf_bal.csv", row.names=F, col.names=c("id", "target"), sep=",")
-
